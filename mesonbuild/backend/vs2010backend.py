@@ -681,7 +681,13 @@ class Vs2010Backend(backends.Backend):
 
             p = ET.SubElement(globalgroup, 'Platform')
             p.text = target_platform
-            if self.windows_target_platform_version:
+            if conftype == 'DynamicLibrary' and self.environment.coredata.get_option(OptionKey('uwp')):
+                ET.SubElement(globalgroup, 'AppContainerApplication').text = 'true'
+                ET.SubElement(globalgroup, 'ApplicationType').text = 'Windows Store'
+                ET.SubElement(globalgroup, 'WindowsTargetPlatformVersion').text = self.windows_target_platform_version
+                ET.SubElement(globalgroup, 'WindowsTargetPlatformMinVersion').text = self.windows_target_platform_version
+                ET.SubElement(globalgroup, 'ApplicationTypeRevision').text = '10.0'
+            elif self.windows_target_platform_version:
                 ET.SubElement(globalgroup, 'WindowsTargetPlatformVersion').text = self.windows_target_platform_version
             ET.SubElement(globalgroup, 'UseMultiToolTask').text = 'true'
 
@@ -1385,6 +1391,9 @@ class Vs2010Backend(backends.Backend):
         target_defines.append('%(PreprocessorDefinitions)')
         ET.SubElement(clconf, 'PreprocessorDefinitions').text = ';'.join(target_defines)
         ET.SubElement(clconf, 'FunctionLevelLinking').text = 'true'
+        ET.SubElement(clconf, 'CompileAsWinRT').text = 'false'
+        if not self.target_uses_pch(target):
+            ET.SubElement(clconf, 'PrecompiledHeader').text = 'NotUsing'
         # Warning level
         warning_level = T.cast('str', self.get_target_option(target, 'warning_level'))
         warning_level = 'EnableAllWarnings' if warning_level == 'everything' else 'Level' + str(1 + int(warning_level))
@@ -1566,6 +1575,8 @@ class Vs2010Backend(backends.Backend):
         addchecksum = self.get_target_option(target, 'buildtype') != 'debug'
         if addchecksum:
             ET.SubElement(link, 'SetChecksum').text = 'true'
+        if self.environment.coredata.get_option(OptionKey('uwp')):
+            ET.SubElement(link, 'GenerateWindowsMetadata').text = 'false'
 
     # Visual studio doesn't simply allow the src files of a project to be added with the 'Condition=...' attribute,
     # to allow us to point to the different debug/debugoptimized/release sets of generated src files for each of

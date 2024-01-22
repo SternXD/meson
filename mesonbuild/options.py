@@ -105,6 +105,7 @@ _BUILTIN_NAMES = {
     'pkg_config_path',
     'cmake_prefix_path',
     'vsenv',
+    'uwp',
 }
 
 _BAD_VALUE = 'Qwert Zuiopü'
@@ -733,6 +734,7 @@ BUILTIN_CORE_OPTIONS: T.Mapping[OptionKey, AnyOptionType] = {
         UserComboOption('wrap_mode', 'Wrap mode', 'default', choices=['default', 'nofallback', 'nodownload', 'forcefallback', 'nopromote']),
         UserStringArrayOption('force_fallback_for', 'Force fallback for those subprojects', []),
         UserBooleanOption('vsenv', 'Activate Visual Studio environment', False, readonly=True),
+        UserBooleanOption('uwp', 'Target Universal Windows Platform', False, readonly=True),
 
         # Pkgconfig module
         UserBooleanOption('pkgconfig.relocatable', 'Generate pkgconfig files as relocatable', False),
