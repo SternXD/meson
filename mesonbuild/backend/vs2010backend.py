@@ -1044,9 +1044,9 @@ class Vs2010Backend(backends.Backend):
         for l, comp in target.compilers.items():
             if l in file_args:
                 file_args[l] += compilers.get_base_compile_args(
-                    target.get_options(), comp)
+                    target, comp, self.environment)
                 file_args[l] += comp.get_option_compile_args(
-                    target.get_options())
+                    target, self.environment, target.subproject)
 
         # Add compile args added using add_project_arguments()
         for l, args in self.build.projects_args[target.for_machine].get(target.subproject, {}).items():
@@ -1060,7 +1060,7 @@ class Vs2010Backend(backends.Backend):
         # Compile args added from the env or cross file: CFLAGS/CXXFLAGS, etc. We want these
         # to override all the defaults, but not the per-target compile args.
         for l in file_args.keys():
-            file_args[l] += target.get_option(OptionKey('args', machine=target.for_machine, lang=l))
+            file_args[l] += self.get_target_option(target, OptionKey(f'{l}_args', machine=target.for_machine))
 
         # Add per-target compile args, f.ex, `c_args : ['/DFOO']`. We set these
         # near the end since these are supposed to override everything else.
@@ -1701,10 +1701,10 @@ class Vs2010Backend(backends.Backend):
             subsystem = target.win_subsystem.split(',')[0]
         elif isinstance(target, build.StaticLibrary):
             conftype = 'StaticLibrary'
-            uwp = self.environment.coredata.get_option(OptionKey('uwp'))
+            uwp = self.environment.coredata.optstore.get_value_for(OptionKey('uwp'))
         elif isinstance(target, build.SharedLibrary):
             conftype = 'DynamicLibrary'
-            uwp = self.environment.coredata.get_option(OptionKey('uwp'))
+            uwp = self.environment.coredata.optstore.get_value_for(OptionKey('uwp'))
         elif isinstance(target, build.CustomTarget):
             self.gen_custom_target_vcxproj(target, ofname, guid)
             return True
@@ -1732,7 +1732,7 @@ class Vs2010Backend(backends.Backend):
         build_args = Vs2010Backend.get_build_args(compiler, self.optimization, self.debug, self.sanitize)
         (c_target_args, c_file_args) = self.get_args(target, compiler, build_args)
         if self.is_uwp(c_file_args):
-            uwp = self.environment.coredata.get_option(OptionKey('uwp'))
+            uwp = self.environment.coredata.optstore.get_value_for(OptionKey('uwp'))
 
         (root, type_config) = self.create_basic_project(tfilename[0],
                                                         temp_dir=target.get_id(),
