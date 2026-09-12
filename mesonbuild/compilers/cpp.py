@@ -14,6 +14,7 @@ from ..mesonlib import MesonException, version_compare, lazy_property
 from .compilers import (
     gnu_winlibs,
     msvc_winlibs,
+    uwp_winlibs,
     Compiler,
     CompileCheckMode,
 )
@@ -811,10 +812,11 @@ class VisualStudioLikeCPPCompilerMixin(CompilerMixinBase):
             True)
 
         key = self.form_compileropt_key('winlibs')
+        winlibs = uwp_winlibs if self.info.is_uwp() else msvc_winlibs
         opts[key] = options.UserStringArrayOption(
             self.make_option_name(key),
             'Standard Win libraries to link against',
-            msvc_winlibs)
+            winlibs)
 
         std_opt = opts[self.form_compileropt_key('std')]
         assert isinstance(std_opt, options.UserStdOption), 'for mypy'
@@ -830,6 +832,9 @@ class VisualStudioLikeCPPCompilerMixin(CompilerMixinBase):
 
     def get_option_compile_args(self, target: 'BuildTarget', subproject: T.Optional[str] = None) -> T.List[str]:
         args: T.List[str] = []
+
+        if self.info.is_uwp():
+            args.append('/DWINAPI_FAMILY=WINAPI_FAMILY_APP')
 
         eh = self.get_compileropt_value('eh', target, subproject)
         rtti = self.get_compileropt_value('rtti', target, subproject)

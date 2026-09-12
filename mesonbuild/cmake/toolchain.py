@@ -155,10 +155,12 @@ class CMakeToolchain:
         # Only set these in a cross build. Otherwise CMake will trip up in native
         # builds and thing they are cross (which causes TRY_RUN() to break)
         if self.env.is_cross_build(when_building_for=self.for_machine):
-            # OHOS is modelled as an Android subsystem in meson, but CMake has a
-            # dedicated OHOS system name, so map it explicitly.
+            # OHOS and UWP are modelled as subsystems in meson, but CMake has
+            # dedicated system names for them, so map them explicitly.
             if self.minfo.is_ohos():
                 system_name = 'OHOS'
+            elif self.minfo.is_uwp():
+                system_name = 'WindowsStore'
             else:
                 system_name = SYSTEM_MAP.get(self.minfo.system, self.minfo.system)
             defaults['CMAKE_SYSTEM_NAME'] = [system_name]

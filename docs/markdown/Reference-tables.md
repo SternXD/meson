@@ -249,6 +249,15 @@ Set when `system` is `android`.
 | android             | Android (Bionic libc)           |
 | ohos                | OpenHarmony / HarmonyOS (OHOS)  |
 
+### `windows` subsystems
+
+Set when `system` is `windows`.
+
+| Value               | Comment                         |
+| -----               | -------                         |
+| windows             | Windows desktop (Win32)         |
+| uwp                 | Universal Windows Platform      |
+
 ## Language arguments parameter names
 
 These are the parameter names for passing language specific arguments

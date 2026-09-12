@@ -203,6 +203,9 @@ class DynamicLinker(metaclass=mesonlib.SimpleABC):
     def get_option_link_args(self, target: 'BuildTarget', subproject: T.Optional[str] = None) -> T.List[str]:
         return []
 
+    def get_uwp_args(self) -> T.List[str]:
+        return []
+
     def has_multi_arguments(self, args: T.List[str]) -> T.Tuple[bool, bool]:
         raise EnvironmentException(f'Language {self.id} does not support has_multi_link_arguments.')
 
@@ -1525,6 +1528,9 @@ class VisualStudioLikeLinkerMixin(DynamicLinkerBase):
 
     def get_std_shared_lib_args(self) -> T.List[str]:
         return self._apply_prefix('/DLL')
+
+    def get_uwp_args(self) -> T.List[str]:
+        return self._apply_prefix('/APPCONTAINER')
 
     def get_debugfile_name(self, targetfile: str) -> str:
         return targetfile

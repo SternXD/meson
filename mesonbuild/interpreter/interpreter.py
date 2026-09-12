@@ -1318,6 +1318,9 @@ class Interpreter(InterpreterBase, HoldableObject):
         else:
             mesonlib.project_meson_versions[self.subproject] = mesonlib.NoProjectVersion()
 
+        if not self.is_subproject() and self.environment.machines.host.is_uwp():
+            FeatureNew.single_use('Windows UWP subsystem', '1.13.0', self.subproject, location=node)
+
         self._load_option_file()
 
         self.project_default_options = kwargs['default_options']

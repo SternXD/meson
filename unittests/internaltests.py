@@ -80,6 +80,48 @@ class InternalTests(unittest.TestCase):
         # A non-Android system with an 'ohos' subsystem is not OHOS either.
         self.assertFalse(machine('linux', 'ohos').is_ohos())
 
+    def test_machine_info_is_uwp(self):
+        def machine(system: str, subsystem: str) -> mesonbuild.envconfig.MachineInfo:
+            return mesonbuild.envconfig.MachineInfo(
+                system=system, cpu_family='x86_64', cpu='x86_64',
+                endian='little', kernel='nt', subsystem=subsystem)
+
+        # UWP is modelled as a Windows subsystem.
+        uwp = machine('windows', 'uwp')
+        self.assertTrue(uwp.is_uwp())
+        self.assertTrue(uwp.is_windows())
+
+        # Plain Windows is not UWP.
+        self.assertFalse(machine('windows', 'windows').is_uwp())
+        self.assertFalse(machine('windows', None).is_uwp())
+
+    def test_uwp_compiler_and_linker(self):
+        env = get_fake_env()
+        env.machines.host = mesonbuild.envconfig.MachineInfo(
+            'windows', 'x86_64', 'x86_64', 'little', 'nt', 'uwp')
+        env.add_lang_args('c', VisualStudioCCompiler, MachineChoice.HOST)
+        env.add_lang_args('cpp', VisualStudioCPPCompiler, MachineChoice.HOST)
+        linker = linkers.MSVCDynamicLinker(env, MachineChoice.HOST, [])
+        cc = VisualStudioCCompiler([], [], '20.00', MachineChoice.HOST, env, 'x64', linker=linker)
+        cpp = VisualStudioCPPCompiler([], [], '20.00', MachineChoice.HOST, env, 'x64', linker=linker)
+        env.coredata.add_compiler_options(cc.get_options(), 'c', MachineChoice.HOST, '')
+        env.coredata.add_compiler_options(cpp.get_options(), 'cpp', MachineChoice.HOST, '')
+
+        self.assertEqual(cc.get_options()[OptionKey('c_winlibs', machine=MachineChoice.HOST)].value, ['WindowsApp.lib'])
+        self.assertEqual(cpp.get_options()[OptionKey('cpp_winlibs', machine=MachineChoice.HOST)].value, ['WindowsApp.lib'])
+        self.assertIn('/DWINAPI_FAMILY=WINAPI_FAMILY_APP', cc.get_option_compile_args(None))
+        self.assertIn('/DWINAPI_FAMILY=WINAPI_FAMILY_APP', cpp.get_option_compile_args(None))
+        self.assertEqual(linker.get_uwp_args(), ['/APPCONTAINER'])
+
+        env_win = get_fake_env()
+        env_win.machines.host = mesonbuild.envconfig.MachineInfo(
+            'windows', 'x86_64', 'x86_64', 'little', 'nt', None)
+        env_win.add_lang_args('c', VisualStudioCCompiler, MachineChoice.HOST)
+        linker_win = linkers.MSVCDynamicLinker(env_win, MachineChoice.HOST, [])
+        cc_win = VisualStudioCCompiler([], [], '20.00', MachineChoice.HOST, env_win, 'x64', linker=linker_win)
+        env_win.coredata.add_compiler_options(cc_win.get_options(), 'c', MachineChoice.HOST, '')
+        self.assertNotIn('/DWINAPI_FAMILY=WINAPI_FAMILY_APP', cc_win.get_option_compile_args(None))
+
     def test_get_env_for_paths(self):
         machines = {
             system: mesonbuild.envconfig.MachineInfo(

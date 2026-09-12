@@ -383,6 +383,17 @@ class MachineInfo(HoldableObject):
         """
         return self.is_android() and self.subsystem == 'ohos'
 
+    def is_uwp(self) -> bool:
+        """
+        Machine is the Universal Windows Platform (UWP)?
+
+        UWP is modelled as a Windows subsystem: it behaves like Windows
+        but targets AppContainer and uses WindowsApp.lib instead of the
+        desktop Win32 libraries. Machine files select it with
+        system = 'windows' and subsystem = 'uwp'.
+        """
+        return self.is_windows() and self.subsystem == 'uwp'
+
     def is_haiku(self) -> bool:
         """
         Machine is Haiku?

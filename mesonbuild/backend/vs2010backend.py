@@ -161,6 +161,9 @@ class Vs2010Backend(backends.Backend):
     def get_target_private_dir(self, target: build.AnyTargetType) -> str:
         return os.path.join(self.get_target_dir(target), target.get_id())
 
+    def is_uwp_target(self, target: build.Target) -> bool:
+        return target.for_machine is MachineChoice.HOST and self.environment.machines.host.is_uwp()
+
     def generate_gensrc_for_target(
             self, genlist: build.GeneratedTypes,
             target: build.BuildTarget | build.CustomTarget,
@@ -592,7 +595,8 @@ class Vs2010Backend(backends.Backend):
                              target_ext: T.Optional[str] = None,
                              target_platform: T.Optional[str] = None,
                              gen_manifest: bool | T.Literal['embed'] = True,
-                             masm_type: T.Optional[T.Literal['masm', 'marmasm']] = None) -> T.Tuple[ET.Element, ET.Element]:
+                             masm_type: T.Optional[T.Literal['masm', 'marmasm']] = None,
+                             is_uwp: bool = False) -> T.Tuple[ET.Element, ET.Element]:
         root = ET.Element('Project', {'DefaultTargets': "Build",
                                       'ToolsVersion': '4.0',
                                       'xmlns': 'http://schemas.microsoft.com/developer/msbuild/2003'})
@@ -616,6 +620,12 @@ class Vs2010Backend(backends.Backend):
         guidelem.text = '{%s}' % guid
         kw = ET.SubElement(globalgroup, 'Keyword')
         kw.text = self.platform + 'Proj'
+        if is_uwp:
+            # ApplicationType must be set before Microsoft.Cpp.Default.props so
+            # MSBuild imports the Windows Store project properties.
+            ET.SubElement(globalgroup, 'AppContainerApplication').text = 'true'
+            ET.SubElement(globalgroup, 'ApplicationType').text = 'Windows Store'
+            ET.SubElement(globalgroup, 'ApplicationTypeRevision').text = '10.0'
 
         ET.SubElement(root, 'Import', Project=r'$(VCTargetsPath)\Microsoft.Cpp.Default.props')
 
@@ -1649,7 +1659,8 @@ class Vs2010Backend(backends.Backend):
                                                         target_ext=tfilename[1],
                                                         target_platform=platform,
                                                         gen_manifest=self.get_gen_manifest(target),
-                                                        masm_type=masm)
+                                                        masm_type=masm,
+                                                        is_uwp=self.is_uwp_target(target))
 
         generated_files, custom_target_output_files, generated_files_include_dirs = self.generate_custom_generator_commands(
             target, root)

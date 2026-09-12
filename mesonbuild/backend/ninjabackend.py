@@ -3641,6 +3641,9 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
 
         assert isinstance(linker, Compiler)
         commands: T.List[str] = []
+        if self.environment.machines[target.for_machine].is_uwp():
+            if linker.linker is not None:
+                commands += linker.linker.get_uwp_args()
         if isinstance(target, build.Executable):
             # Currently only used with the Swift compiler to add '-emit-executable'
             commands += linker.get_std_exe_link_args()

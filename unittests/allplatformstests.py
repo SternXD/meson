@@ -3183,6 +3183,17 @@ class AllPlatformTests(BasePlatformTests):
         self.assertRegex(out, "WARNING: Project specifies a minimum meson_version '>= 0.45'")
         self.assertRegex(out, " * 0.47.0: {'dict'}")
 
+    def test_uwp_subsystem_feature_check(self):
+        testdir = os.path.join(self.unit_test_dir, '140 uwp feature check')
+        cross_file = os.path.join(testdir, 'uwp.ini')
+
+        out = self.init(os.path.join(testdir, 'old'), extra_args=['--cross-file', cross_file])
+        self.assertRegex(out, r"WARNING: Project targets '>= 1.12.0'.*'1.13.0': Windows UWP subsystem")
+        self.wipe()
+
+        out = self.init(os.path.join(testdir, 'new'), extra_args=['--cross-file', cross_file])
+        self.assertNotRegex(out, 'Windows UWP subsystem')
+
     def test_configure_file_warnings(self):
         testdir = os.path.join(self.common_test_dir, "14 configure file")
         out = self.init(testdir)
