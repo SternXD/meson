@@ -35,6 +35,7 @@ from .mixins.tasking import TaskingCompiler
 from .compilers import (
     gnu_winlibs,
     msvc_winlibs,
+    uwp_winlibs,
     Compiler,
 )
 
@@ -408,13 +409,20 @@ class VisualStudioLikeCCompilerMixin(CompilerMixinBase):
 
     """Shared methods that apply to MSVC-like C compilers."""
 
+    def get_option_compile_args(self, target: 'BuildTarget', subproject: T.Optional[str] = None) -> T.List[str]:
+        args = super().get_option_compile_args(target, subproject)
+        if self.info.is_uwp():
+            args.append('/DWINAPI_FAMILY=WINAPI_FAMILY_APP')
+        return args
+
     def get_options(self) -> MutableKeyedOptionDictType:
         opts = super().get_options()
         key = self.form_compileropt_key('winlibs')
+        winlibs = uwp_winlibs if self.info.is_uwp() else msvc_winlibs
         opts[key] = options.UserStringArrayOption(
             self.make_option_name(key),
             'Standard Windows libraries to link against',
-            msvc_winlibs)
+            winlibs)
         return opts
 
     def get_option_link_args(self, target: 'BuildTarget', subproject: T.Optional[str] = None) -> T.List[str]:
